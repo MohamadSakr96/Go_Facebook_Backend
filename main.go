@@ -37,6 +37,7 @@ func main() {
 	
 	router := mux.NewRouter()
 
+	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/users/{id}", getUsers).Methods("POST")
 	// router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
 	// router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
@@ -177,6 +178,43 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	for result.Next() {
 		var user User
 		err := result.Scan(&user.ID, &user.Name)
+		if err != nil {
+			panic(err.Error())
+		}
+		users = append(users, user)
+	}
+	
+	json.NewEncoder(w) .Encode(users)
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var users []User
+
+	stmt, err := db.Prepare("SELECT user_id FROM users WHERE user_email = ? AND password = ?;")
+	if err != nil {
+		panic(err.Error())
+	}
+	
+	defer stmt.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+	  panic(err.Error())
+	}
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal)
+	email := keyVal["email"]
+	password := keyVal["password"]
+
+	result, err := stmt.Query(email, password)
+	if err != nil {
+	  panic(err.Error())
+	}
+
+	for result.Next() {
+		var user User
+		err := result.Scan(&user.ID)
 		if err != nil {
 			panic(err.Error())
 		}
