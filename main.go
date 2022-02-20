@@ -37,6 +37,7 @@ func main() {
 	
 	router := mux.NewRouter()
 
+	router.HandleFunc("/signup", signup).Methods("POST")
 	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/users/{id}", getUsers).Methods("POST")
 	// router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
@@ -223,3 +224,31 @@ func login(w http.ResponseWriter, r *http.Request) {
 	
 	json.NewEncoder(w) .Encode(users)
 }
+
+
+
+func signup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	stmt, err := db.Prepare("INSERT INTO users(user_name,user_email,password) VALUES (?,?,?)")
+	if err != nil {
+	  panic(err.Error())
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+	  panic(err.Error())
+	}
+
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal)
+	user_name := keyVal["user_name"]
+	user_email := keyVal["user_email"]
+	password := keyVal["password"]
+
+	_, err = stmt.Exec(user_name,user_email,password)
+	if err != nil {
+	  panic(err.Error())
+	}
+
+	fmt.Fprintf(w, "User was created")
+  }
