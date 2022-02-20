@@ -35,6 +35,7 @@ func main() {
 	router.HandleFunc("/posts/{id}", getPosts).Methods("POST")
 	router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
 	router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
+	router.HandleFunc("/posts/delete/{id}", deletePost).Methods("DELETE")
 
 	http.ListenAndServe(":8000", router)
 }
@@ -110,4 +111,18 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 	  panic(err.Error())
 	}
 	fmt.Fprintf(w, "Post was Updated!")
+  }
+
+  func deletePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	stmt, err := db.Prepare("DELETE FROM posts WHERE post_id=?")
+	if err != nil {
+	  panic(err.Error())
+	}
+	_, err = stmt.Exec(params["id"])
+	if err != nil {
+	  panic(err.Error())
+	}
+	fmt.Fprintf(w, "Post Deleted!")
   }
