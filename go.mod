@@ -1,4 +1,4 @@
-module example.com/m
+module example.com/Go_Facebook_Backend
 
 go 1.17
 
