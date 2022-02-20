@@ -34,6 +34,7 @@ func main() {
 
 	router.HandleFunc("/posts/{id}", getPosts).Methods("POST")
 	router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
+	router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
 
 	http.ListenAndServe(":8000", router)
 }
@@ -88,4 +89,25 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "New post was created")
+  }
+
+  func updatePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	stmt, err := db.Prepare("UPDATE posts SET post_content =? WHERE post_id=?;")
+	if err != nil {
+	  panic(err.Error())
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+	  panic(err.Error())
+	}
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal)
+	contant := keyVal["post_contant"]
+	_, err = stmt.Exec(contant, params["id"])
+	if err != nil {
+	  panic(err.Error())
+	}
+	fmt.Fprintf(w, "Post was Updated!")
   }
