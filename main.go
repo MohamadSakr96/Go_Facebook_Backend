@@ -32,11 +32,17 @@ func main() {
 	
 	router := mux.NewRouter()
 
+	// router.HandleFunc("/users/{id}", getUsers).Methods("POST")
+	// router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
+	// router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
+	// router.HandleFunc("/posts/delete/{id}", deletePost).Methods("DELETE")
+	
 	router.HandleFunc("/posts/{id}", getPosts).Methods("POST")
 	router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
+	router.HandleFunc("/posts/like/{id}", likePost).Methods("POST")
 	router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
 	router.HandleFunc("/posts/delete/{id}", deletePost).Methods("DELETE")
-
+	
 	http.ListenAndServe(":8000", router)
 }
 
@@ -125,4 +131,27 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 	  panic(err.Error())
 	}
 	fmt.Fprintf(w, "Post Deleted!")
+  }
+  
+  func likePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	stmt, err := db.Prepare("INSERT INTO post_likes (post_id,user_id) VALUES (?, ?);")
+	if err != nil {
+	  panic(err.Error())
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+	  panic(err.Error())
+	}
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal)
+	post_id := keyVal["post_id"]
+
+	_, err = stmt.Exec(post_id, params["id"])
+	if err != nil {
+	  panic(err.Error())
+	}
+	fmt.Fprintf(w, "+1 like!")
   }
