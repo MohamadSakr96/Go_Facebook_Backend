@@ -20,6 +20,11 @@ type Post struct {
 	Likes string `json:"nb_likes"`
 }
 
+type User struct {
+	ID string `json:"user_id"`
+	Name string `json:"user_name"`
+}
+
 var db *sql.DB
 var err error
 
@@ -32,7 +37,7 @@ func main() {
 	
 	router := mux.NewRouter()
 
-	// router.HandleFunc("/users/{id}", getUsers).Methods("POST")
+	router.HandleFunc("/users/{id}", getUsers).Methods("POST")
 	// router.HandleFunc("/posts/create/{id}", createPost).Methods("POST")
 	// router.HandleFunc("/posts/update/{id}", updatePost).Methods("PUT")
 	// router.HandleFunc("/posts/delete/{id}", deletePost).Methods("DELETE")
@@ -155,3 +160,28 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "+1 like!")
   }
+
+  
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	var users []User
+
+	result, err := db.Query("SELECT user_id,user_name FROM users WHERE user_id NOT IN(SELECT from_user_id FROM blocks WHERE to_user_id=? UNION SELECT user_id FROM users where user_id=?) AND user_id NOT IN (SELECT friend_id FROM user_friends WHERE user_id=? UNION SELECT user_id FROM user_friends WHERE friend_id=? UNION SELECT user_id FROM users WHERE user_id=?);",params["id"], params["id"],params["id"],params["id"],params["id"])
+	if err != nil {
+		panic(err.Error())
+	}
+	
+	defer result.Close()
+
+	for result.Next() {
+		var user User
+		err := result.Scan(&user.ID, &user.Name)
+		if err != nil {
+			panic(err.Error())
+		}
+		users = append(users, user)
+	}
+	
+	json.NewEncoder(w) .Encode(users)
+}
